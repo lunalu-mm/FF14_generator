@@ -35,22 +35,30 @@
 
   <div class="grid">
     <div class="panel">
-      <label>左圖</label>
+      <label>左</label>
       <input id="leftImg" type="file" accept="image/*">
 
-      <label>右圖</label>
+      <label>右</label>
       <input id="rightImg" type="file" accept="image/*">
 
       <label>角色名稱</label>
       <input id="name" value="Luna Lu" placeholder="例如：Luna Lu">
 
       <label>副標文字</label>
-      <input id="subtitle" value="♡ FINAL FANTASY XIV ♡">
+      <input id="subtitle" value="✦ FINAL FANTASY XIV ✦">
+
+      <label>文字顏色</label>
+      <select id="textColor">
+        <option value="black">黑色</option>
+        <option value="white">白色</option>
+        <option value="multiply">色彩增值</option>
+      </select>
 
       <div class="row">
         <div>
           <label>色調</label>
           <select id="tone">
+            <option value="original">原圖</option>
             <option value="warm">暖金白</option>
             <option value="soft">柔霧白</option>
             <option value="dark">暗黑雜誌</option>
@@ -125,7 +133,7 @@ let leftImage = null;
 let rightImage = null;
 
 const ids = [
-  'name','subtitle','tone','fadeWidth','fadeCenter',
+  'name','subtitle','textColor','tone','fadeWidth','fadeCenter',
   'leftScale','leftX','leftY','rightScale','rightX','rightY'
 ];
 
@@ -179,10 +187,11 @@ function drawPlaceholder(){
   ctx.textAlign = 'center';
   ctx.fillText('上傳照片後按「產生拼貼」',540,430);
   ctx.font = '22px sans-serif';
-  ctx.fillText('左　右',540,470);
+  ctx.fillText('左圖　右圖',540,470);
 }
 
 function addTone(tone){
+  if(tone === 'original') return;
   const g = ctx.createLinearGradient(0,0,1080,900);
   if(tone === 'dark'){
     g.addColorStop(0,'rgba(25,25,25,.18)');
@@ -197,6 +206,33 @@ function addTone(tone){
   }
   ctx.fillStyle = g;
   ctx.fillRect(0,0,1080,900);
+}
+
+
+function getTextColors(tone){
+  const mode = document.getElementById('textColor')?.value || 'black';
+
+  if(mode === 'white'){
+    return {
+      main: 'rgba(255,255,255,.92)',
+      sub: 'rgba(255,255,255,.74)',
+      credit: 'rgba(255,255,255,.68)'
+    };
+  }
+
+  if(mode === 'multiply'){
+    return {
+      main: tone === 'dark' ? 'rgba(255,245,225,.90)' : 'rgba(92,54,32,.92)',
+      sub: tone === 'dark' ? 'rgba(255,236,200,.72)' : 'rgba(130,82,48,.76)',
+      credit: tone === 'dark' ? 'rgba(255,236,200,.66)' : 'rgba(120,76,45,.66)'
+    };
+  }
+
+  return {
+    main: 'rgba(35,38,40,.94)',
+    sub: 'rgba(35,38,40,.72)',
+    credit: 'rgba(35,38,40,.66)'
+  };
 }
 
 function draw(){
@@ -252,38 +288,34 @@ function draw(){
 
   ctx.drawImage(temp,0,0);
 
-  // 中間柔霧亮帶，只做柔化，不裁切照片
-  const mist = ctx.createLinearGradient(center-width*.9,0,center+width*.9,0);
-  mist.addColorStop(0,'rgba(255,255,255,0)');
-  mist.addColorStop(.5, tone === 'dark' ? 'rgba(20,20,20,.20)' : 'rgba(255,255,255,.34)');
-  mist.addColorStop(1,'rgba(255,255,255,0)');
-  ctx.fillStyle = mist;
-  ctx.fillRect(center-width,0,width*2,900);
+  // 已徹底移除中間白霧，避免羽化過渡變白
 
   addTone(tone);
 
   const vg = ctx.createRadialGradient(540,450,220,540,450,760);
   vg.addColorStop(0,'rgba(255,255,255,0)');
-  vg.addColorStop(1, tone === 'dark' ? 'rgba(0,0,0,.28)' : 'rgba(80,55,20,.08)');
+  vg.addColorStop(1, tone === 'original' ? 'rgba(255,255,255,0)' : (tone === 'dark' ? 'rgba(0,0,0,.28)' : 'rgba(80,55,20,.08)'));
   ctx.fillStyle = vg;
   ctx.fillRect(0,0,1080,900);
 
   const name = document.getElementById('name').value || 'Character Name';
   const subtitle = document.getElementById('subtitle').value || '✦ FINAL FANTASY XIV ✦';
+  const textColors = getTextColors(tone);
 
   ctx.textAlign = 'left';
-  ctx.fillStyle = tone === 'dark' ? 'rgba(255,255,255,.88)' : 'rgba(45,52,55,.92)';
+  ctx.fillStyle = textColors.main;
   // 改成較細的黑體字，尺寸縮小
   ctx.font = '300 26px "Noto Sans TC","Microsoft JhengHei",sans-serif';
   ctx.fillText(name, 42, 58);
 
-  ctx.fillStyle = tone === 'dark' ? 'rgba(255,255,255,.68)' : 'rgba(45,52,55,.70)';
+  ctx.fillStyle = textColors.sub;
   ctx.font = '400 14px "Noto Sans TC","Microsoft JhengHei",sans-serif';
   ctx.fillText(subtitle, 42, 78);
+
   ctx.textAlign = 'center';
-  ctx.fillStyle = tone === 'dark' ? 'rgba(255,255,255,.62)' : 'rgba(45,52,55,.62)';
+  ctx.fillStyle = textColors.credit;
   ctx.font = '12px sans-serif';
-  ctx.fillText('© SQUARE ENIX • by Lunalu', 540, 870);
+  ctx.fillText('© SQUARE ENIX • Fan Work by Lunalu', 540, 885);
 
 }
 
